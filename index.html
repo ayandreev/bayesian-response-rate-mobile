@@ -5,10 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Probability that the true response rate of the new treatment is higher than a benchmark</title>
   <style>
-    :root{
-      --bg:#0b1020; --panel:#121a33; --ink:#f3f5ff; --muted:#aab3d7; --accent:#7aa2ff; --accent2:#5be7c4; --shadow:rgba(0,0,0,0.35);
-      --radius:14px; --pad:16px; --gap:12px;
-    }
+    :root{ --bg:#0b1020; --panel:#121a33; --ink:#f3f5ff; --muted:#aab3d7; --accent:#7aa2ff; --accent2:#5be7c4; --shadow:rgba(0,0,0,0.35); --radius:14px; --pad:16px; --gap:12px; }
     html,body{height:100%}
     body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Arial;background:radial-gradient(1200px 800px at 70% -20%,#18224a,var(--bg));color:var(--ink)}
     .wrap{max-width:960px;margin:20px auto 80px;padding:0 16px}
@@ -18,19 +15,24 @@
     .grid{display:grid;grid-template-columns:1fr;gap:14px}
     .row{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap)}
     .row-compact{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap);align-items:end}
-    @media (max-width:760px){
-      .wrap{padding:0 12px}
-      h1{font-size:20px}
-      .row,.row-compact{grid-template-columns:1fr}
-      :root{--pad:14px;--gap:10px}
-    }
+    @media (max-width:760px){ .wrap{padding:0 12px} h1{font-size:20px} .row,.row-compact{grid-template-columns:1fr} :root{--pad:14px;--gap:10px} }
     label{font-size:12px;color:var(--muted);margin-bottom:6px;display:block}
     .inline-pair{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center}
     input[type="number"],select{width:100%;padding:12px 14px;border-radius:10px;border:1px solid #223064;background:#0b1430;color:var(--ink);font-size:16px;box-sizing:border-box}
-    input[type="range"]{width:100%}
+    /* Touch-friendly sliders */
+    input[type="range"]{width:100%;-webkit-appearance:none;background:transparent;height:38px;margin:6px 0;touch-action: pan-x;}
+    input[type="range"]::-webkit-slider-runnable-track{height:10px;background:#1a2650;border-radius:999px;border:1px solid #223064}
+    input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;height:28px;width:28px;border-radius:50%;background:var(--accent);border:2px solid #0b1430;margin-top:-10px;box-shadow:0 0 0 3px rgba(122,162,255,0.25)}
+    input[type="range"]:active::-webkit-slider-thumb{box-shadow:0 0 0 6px rgba(122,162,255,0.35)}
+    input[type="range"]::-moz-range-track{height:10px;background:#1a2650;border-radius:999px;border:1px solid #223064}
+    input[type="range"]::-moz-range-thumb{height:28px;width:28px;border-radius:50%;background:var(--accent);border:2px solid #0b1430;box-shadow:0 0 0 3px rgba(122,162,255,0.25)}
+    input[type="range"]::-ms-track{height:10px;background:transparent;border-color:transparent;color:transparent}
+    input[type="range"]::-ms-fill-lower,input[type="range"]::-ms-fill-upper{background:#1a2650;border:1px solid #223064;border-radius:999px}
+    input[type="range"]::-ms-thumb{height:28px;width:28px;border-radius:50%;background:var(--accent);border:2px solid #0b1430}
     .btnbar{display:flex;flex-wrap:wrap;gap:8px}
-    .btn{background:#152042;color:var(--ink);border:1px solid #223064;padding:10px 14px;border-radius:10px;cursor:pointer;font-size:14px}
+    .btn{background:#152042;color:var(--ink);border:1px solid #223064;padding:10px 14px;border-radius:10px;cursor:pointer;font-size:14px;touch-action:manipulation;-webkit-tap-highlight-color:rgba(255,255,255,0.2);transition:background .2s ease, transform .1s ease}
     .btn.active{outline:2px solid var(--accent);border-color:var(--accent)}
+    .btn:active{background:#1b2b57;transform:scale(0.97)}
     .sp{height:8px}
     .big{font-size:28px;font-weight:800;color:var(--accent2)}
     .kpi{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
@@ -40,7 +42,6 @@
     .pill .val{font-size:18px;font-weight:700}
     .note{color:var(--muted);font-size:12px;margin-top:6px}
     .warn{color:#ff7676;font-size:12px}
-    /* Responsive canvas */
     .plot-wrap{position:relative}
     canvas{width:100%;height:auto;aspect-ratio:7/3;border-radius:12px;background:#0a1430;border:1px solid #223064;display:block}
     details{border:1px solid #223064;border-radius:12px;padding:10px 12px;background:#0a1430}
@@ -193,12 +194,7 @@ const els = {
 let priorMode='none';
 const strengthToESS = { weak: 20, moderate: 60, strong: 200 };
 
-function priorNew(){
-  if(priorMode==='none') return {a0:1, b0:1};
-  const mu = toProp(els.priorMeanPct.value);
-  const ess = strengthToESS[els.priorStrengthCat.value] || 60;
-  return {a0: mu*ess + 1e-9, b0: (1-mu)*ess + 1e-9};
-}
+function priorNew(){ if(priorMode==='none') return {a0:1, b0:1}; const mu = toProp(els.priorMeanPct.value); const ess = strengthToESS[els.priorStrengthCat.value] || 60; return {a0: mu*ess + 1e-9, b0: (1-mu)*ess + 1e-9}; }
 function posterior(x,n,a0,b0){ return {a:a0+x, b:b0+(n-x)}; }
 
 function compute(){
@@ -225,7 +221,6 @@ function compute(){
   els.probtext.textContent = fmtPct(pAbove);
   els.postmean.textContent = (newOut.mean*100).toFixed(1)+'%';
   els.ci.textContent = (newOut.q025*100).toFixed(1)+'% to '+(newOut.q975*100).toFixed(1)+'%';
-  // Draw vertical line at mean benchmark + margin (clamped)
   const lineAt = Math.min(1, mu0 + delta);
   window._lastSamples = newOut.samples;
   drawFromSamples(els.plot, newOut.samples, lineAt);
@@ -244,11 +239,8 @@ function bind(){
   els.marginPct.addEventListener('input', ()=>{ els.marginPctSlider.value = els.marginPct.value; compute(); });
   els.marginPctSlider.addEventListener('input', ()=>{ els.marginPct.value = els.marginPctSlider.value; compute(); });
 
-  // Redraw plot on resize (mobile orientation changes, etc.)
-  window.addEventListener('resize', ()=>{
-    const lineAt = Math.min(1, toProp(els.thrPct.value) + toProp(els.marginPct.value));
-    drawFromSamples(els.plot, (window._lastSamples||[]), lineAt);
-  });
+  // Redraw plot on resize/orientation change
+  window.addEventListener('resize', ()=>{ const lineAt = Math.min(1, toProp(els.thrPct.value) + toProp(els.marginPct.value)); drawFromSamples(els.plot, (window._lastSamples||[]), lineAt); });
 }
 
 bind();
